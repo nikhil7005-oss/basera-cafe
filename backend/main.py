@@ -10,20 +10,35 @@ from pydantic import BaseModel
 BASE_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(BASE_DIR / ".env")
 
-app = FastAPI(title="Basera Cafe API", version="1.0.0")
+app = FastAPI(title="Baseraa API", version="1.0.0")
 
 
 def get_allowed_origins() -> list[str]:
     raw = os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:8080,http://127.0.0.1:8080,https://*.netlify.app"
+        "http://localhost:8080,http://127.0.0.1:8080"
     )
-    return [value.strip() for value in raw.split(",") if value.strip()]
+    return [
+        value.strip()
+        for value in raw.split(",")
+        if value.strip() and "*" not in value.strip()
+    ]
+
+
+def get_allowed_origin_regex() -> str | None:
+    raw = os.getenv("ALLOWED_ORIGINS", "")
+    for value in raw.split(","):
+        clean = value.strip()
+        if "*" in clean:
+            pattern = clean.replace(".", "\\.").replace("*", ".*")
+            return rf"^{pattern}$"
+    return None
 
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
+    allow_origin_regex=get_allowed_origin_regex(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
