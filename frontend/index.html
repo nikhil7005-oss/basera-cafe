@@ -71,8 +71,9 @@
 <body>
 
     <header id="header">
-        <h1>Aura Cafe ☕</h1>
+        <h1>Basera Cafe ☕</h1>
         <div>
+            <button id="header-back-btn" class="btn" style="display:none; background:#000;" onclick="handleTopBack()">Back</button>
             <button class="btn" onclick="toggleCart()">Cart (<span id="cart-count">0</span>)</button>
             <button class="btn" style="background:#ffeb3b; color:#000;" onclick="showAdminLogin()">Admin ⚙️</button>
         </div>
@@ -89,20 +90,31 @@
     </div>
 
     <div id="admin-panel" class="admin-section">
-        <h2>Store Settings 🛠️</h2><br>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom: 20px;">
+            <h2 style="margin:0;">Store Settings 🛠️</h2>
+            <button class="btn" style="background:#000;" onclick="closeAdmin()">Back</button>
+        </div>
         <div class="input-group">
             <label>Store UPI ID</label>
-            <input type="text" id="admin-upi" value="auracafe@upi">
+            <input type="text" id="admin-upi" value="baseracafe@upi">
         </div>
         <div class="input-group">
             <label>Currency Symbol</label>
             <select id="admin-currency">
+                <option value="₹" selected>Rupees (₹)</option>
                 <option value="$">Dollars ($)</option>
-                <option value="₹">Rupees (₹)</option>
             </select>
         </div>
         <button class="btn" onclick="saveSettings()">Save Settings</button>
-        <button class="btn" style="background:#000;" onclick="closeAdmin()">Close Admin</button>
+
+        <div style="margin-top: 30px; background: #f7f7f7; border: var(--border); padding: 20px; box-shadow: var(--shadow);">
+            <h2>Menu Editor 🍽️</h2>
+            <div id="menu-editor" style="margin-top: 20px;"></div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 20px;">
+                <button class="btn" onclick="addMenuItemEditor()">Add Dish +</button>
+                <button class="btn" style="background:#4CAF50;" onclick="saveMenuFromEditor()">Save Menu</button>
+            </div>
+        </div>
 
         <h2 style="margin-top: 40px;">Live Orders 📋</h2>
         <div id="admin-orders-list" style="margin-top: 20px;">
@@ -116,32 +128,33 @@
         <h2>Your Tray 🛒</h2>
         <div id="cart-items" style="margin: 20px 0;"></div>
         <h3>Total: <span class="currency-symbol">$</span><span id="cart-total">0.00</span></h3><br>
+        <button class="btn" style="background:#000; width:100%; margin-bottom:15px;" onclick="goBackToMenu()">Back</button>
         
         <h3>Payment Method</h3>
         <div class="payment-tabs">
-            <div class="tab active" onclick="setPayment('card')">Card</div>
-            <div class="tab" onclick="setPayment('upi')">UPI</div>
+            <div class="tab active" onclick="setPayment('upi')">UPI</div>
             <div class="tab" onclick="setPayment('cash')">Counter</div>
         </div>
 
-        <div id="pay-card">
-            <button class="btn" style="background:#4CAF50; margin-bottom: 10px;" onclick="useTestCard()">Use Test Card</button>
-            <div class="input-group"><input type="text" id="card-name" placeholder="Name on Card"></div>
-            <div class="input-group"><input type="text" id="card-num" placeholder="Card Number" maxlength="16"></div>
-        </div>
-
-        <div id="pay-upi" style="display:none; text-align:center; padding: 20px; background:#eee; border:var(--border);">
-            <p>Scan to Pay: <strong id="display-upi">auracafe@upi</strong></p>
+        <div id="pay-upi" style="display:block; text-align:center; padding: 20px; background:#eee; border:var(--border);">
+            <p>Scan to Pay: <strong id="display-upi">baseracafe@upi</strong></p>
             <div style="width:150px; height:150px; background:#ccc; margin: 10px auto; display:flex; align-items:center; justify-content:center;">[ QR CODE ]</div>
             <div class="input-group"><input type="text" id="upi-ref" placeholder="Enter Transaction Ref No."></div>
         </div>
 
-        <button class="btn" style="width:100%; margin-top:20px;" onclick="processOrder()">Pay & Order 🚀</button>
+        <div id="counter-print-option" style="display:none; margin-top:15px;">
+            <button class="btn" style="width:100%; background:#000;" onclick="handleCounterPrint()">Print Receipt 🖨️</button>
+        </div>
+
+        <button id="pay-order-button" class="btn" style="width:100%; margin-top:20px;" onclick="processOrder()">Pay & Order 🚀</button>
     </div>
 
     <!-- User Receipt (No Print) -->
     <div id="receipt">
-        <h2 style="text-align:center;">AURA CAFE</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="text-align:center; margin:0;">BASERA CAFE</h2>
+            <button class="btn no-print" style="background:#000; padding:8px 12px;" onclick="goBackFromReceipt()">Back</button>
+        </div>
         <p style="text-align:center;">----------------------</p>
         <div id="receipt-items"></div>
         <p style="text-align:center;">----------------------</p>
@@ -149,12 +162,12 @@
         <p>Method: <span id="receipt-method"></span></p>
         <p>Order ID: #<span id="receipt-id"></span></p>
         <p style="text-align:center; margin-top:20px;">Thank you! Your order is being prepared. ❤️</p>
-        <button class="btn no-print" style="width:100%; margin-top:20px; background:#000;" onclick="location.reload()">Back to Home</button>
+        <button id="receipt-print-button" class="btn no-print" style="display:none; width:100%; margin-top:20px; background:#000;" onclick="printCurrentReceipt()">Print Receipt 🖨️</button>
     </div>
 
     <!-- Admin Print Receipt Container -->
     <div id="admin-receipt" class="print-area">
-        <h2 style="text-align:center;">AURA CAFE (MERCHANT COPY)</h2>
+        <h2 style="text-align:center;">BASERA CAFE (MERCHANT COPY)</h2>
         <p style="text-align:center;">----------------------</p>
         <div id="admin-receipt-items"></div>
         <p style="text-align:center;">----------------------</p>
@@ -164,29 +177,190 @@
     </div>
 
     <script>
-        let menu = [
-            { id: 1, name: 'Matcha Latte', price: 4.50, emoji: '🍵' },
-            { id: 2, name: 'Cold Brew', price: 3.00, emoji: '🧊' },
-            { id: 3, name: 'Avocado Toast', price: 8.00, emoji: '🥑' },
-            { id: 4, name: 'Acai Bowl', price: 9.50, emoji: '🥣' }
+        const CATEGORY_OPTIONS = ['Starters', 'Main Course', 'Beverages', 'Desserts', 'Others'];
+
+        const DEFAULT_MENU = [
+            { id: 1, name: 'Matcha Latte', price: 4.50, emoji: '🍵', image: '', category: 'Beverages' },
+            { id: 2, name: 'Cold Brew', price: 3.00, emoji: '🧊', image: '', category: 'Beverages' },
+            { id: 3, name: 'Avocado Toast', price: 8.00, emoji: '🥑', image: '', category: 'Starters' },
+            { id: 4, name: 'Acai Bowl', price: 9.50, emoji: '🥣', image: '', category: 'Desserts' }
         ];
-        
+
+        let menu = loadMenu();
         let cart = [];
-        let currentMethod = 'card';
-        let currency = '$';
-        let mockOrders = []; // For testing without Firebase
+        let currentMethod = 'upi';
+        let currency = '₹';
+        let mockOrders = loadOrders();
+        let currentOrderForPrint = null;
+        let counterOrderSaved = false;
+
+        function loadOrders() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('auraCafeOrders'));
+                return Array.isArray(saved) ? saved : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveOrders(orders) {
+            localStorage.setItem('auraCafeOrders', JSON.stringify(orders));
+        }
+
+        function saveOrderToDatabase(order) {
+            mockOrders.push(order);
+            saveOrders(mockOrders);
+
+            if(window.db && window.addDoc) {
+                try {
+                    window.addDoc(window.collection(window.db, "orders"), order);
+                } catch (e) {
+                    console.error('Firebase save failed', e);
+                }
+            }
+        }
+
+        function loadMenu() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('auraCafeMenu'));
+                if (Array.isArray(saved) && saved.length > 0) {
+                    return saved;
+                }
+            } catch (e) {
+                console.warn('No saved menu found. Using default menu.');
+            }
+            return DEFAULT_MENU.map(item => ({ ...item }));
+        }
+
+        function persistMenu(menuItems) {
+            localStorage.setItem('auraCafeMenu', JSON.stringify(menuItems));
+        }
 
         function renderMenu() {
             const grid = document.getElementById('menu');
-            grid.innerHTML = menu.map(item => `
-                <div class="menu-item">
-                    <span class="emoji">${item.emoji}</span>
-                    <h3>${item.name}</h3>
-                    <p>${currency}${item.price.toFixed(2)}</p>
-                    <button class="btn" onclick="addToCart(${item.id})">Add +</button>
+            const grouped = {};
+
+            menu.forEach(item => {
+                const category = item.category || 'Other';
+                if (!grouped[category]) grouped[category] = [];
+                grouped[category].push(item);
+            });
+
+            const orderedCategories = CATEGORY_OPTIONS.filter(category => grouped[category]);
+            const remainingCategories = Object.keys(grouped).filter(category => !CATEGORY_OPTIONS.includes(category));
+
+            grid.innerHTML = [...orderedCategories, ...remainingCategories].map((category) => {
+                const items = grouped[category];
+                return `
+                <div style="grid-column: 1 / -1; margin-top: 10px; margin-bottom: 10px;">
+                    <h2 style="text-transform: uppercase; letter-spacing:1px; margin-bottom: 15px; border-bottom: var(--border); padding-bottom: 8px;">${category}</h2>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+                        ${items.map(item => {
+                            const imageMarkup = item.image
+                                ? `<img src="${item.image}" alt="${item.name}" style="width:100%; height:120px; object-fit:cover; border: var(--border); background:#eee; margin-bottom:10px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"> <span class="emoji" style="display:none;">${item.emoji || '☕'}</span>`
+                                : `<span class="emoji">${item.emoji || '☕'}</span>`;
+
+                            return `
+                                <div class="menu-item">
+                                    ${imageMarkup}
+                                    <h3>${item.name}</h3>
+                                    <p>${currency}${item.price.toFixed(2)}</p>
+                                    <button class="btn" onclick="addToCart(${item.id})">Add +</button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                `;
+            }).join('');
+            document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = currency);
+            renderMenuEditor();
+        }
+
+        function renderMenuEditor() {
+            const editor = document.getElementById('menu-editor');
+            if (!editor) return;
+
+            editor.innerHTML = menu.map((item, index) => `
+                <div class="menu-editor-item" data-id="${item.id}" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items:end; border: var(--border); padding: 15px; background:#fff; margin-bottom: 15px; box-shadow: 3px 3px 0 #000;">
+                    <div class="input-group" style="margin:0;">
+                        <label>Dish Name</label>
+                        <input type="text" data-field="name" value="${item.name}" />
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label>Category</label>
+                        <select data-field="category">
+                            ${CATEGORY_OPTIONS.map(category => `<option value="${category}" ${item.category === category ? 'selected' : ''}>${category}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label>Price</label>
+                        <input type="number" step="0.01" min="0" data-field="price" value="${Number(item.price).toFixed(2)}" />
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label>Emoji</label>
+                        <input type="text" data-field="emoji" value="${item.emoji || ''}" />
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label>Image URL</label>
+                        <input type="url" data-field="image" value="${item.image || ''}" placeholder="https://..." />
+                    </div>
+                    <button class="btn" style="background:#000; margin:0;" onclick="removeMenuItem(${index})">Remove</button>
                 </div>
             `).join('');
-            document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = currency);
+        }
+
+        function addMenuItemEditor() {
+            menu.push({
+                id: Date.now(),
+                name: 'New Dish',
+                price: 0,
+                emoji: '🍽️',
+                image: '',
+                category: 'Others'
+            });
+            renderMenuEditor();
+        }
+
+        function removeMenuItem(index) {
+            if (menu.length <= 1) {
+                alert('At least one dish should remain in the menu.');
+                return;
+            }
+            menu.splice(index, 1);
+            renderMenu();
+        }
+
+        function saveMenuFromEditor() {
+            const updatedMenu = [...document.querySelectorAll('.menu-editor-item')].map((row) => {
+                const name = row.querySelector('[data-field="name"]').value.trim();
+                const category = row.querySelector('[data-field="category"]').value || 'Other';
+                const price = Number(row.querySelector('[data-field="price"]').value || 0);
+                const emoji = row.querySelector('[data-field="emoji"]').value.trim() || '☕';
+                const image = row.querySelector('[data-field="image"]').value.trim();
+
+                if (!name) return null;
+
+                return {
+                    id: Number(row.dataset.id) || Date.now(),
+                    name,
+                    category,
+                    price: isNaN(price) ? 0 : price,
+                    emoji,
+                    image
+                };
+            }).filter(Boolean);
+
+            if (!updatedMenu.length) {
+                alert('Please add at least one dish before saving.');
+                return;
+            }
+
+            menu = updatedMenu;
+            persistMenu(menu);
+            renderMenu();
+            updateCart();
+            alert('Menu updated successfully!');
         }
 
         function addToCart(id) {
@@ -211,14 +385,54 @@
         function toggleCart() {
             document.getElementById('cart').classList.toggle('active');
             document.getElementById('menu').style.display = document.getElementById('cart').classList.contains('active') ? 'none' : 'grid';
+            updateTopBackButton();
         }
 
-        function setPayment(method) {
+        function goBackToMenu() {
+            document.getElementById('cart').classList.remove('active');
+            document.getElementById('menu').style.display = 'grid';
+            updateTopBackButton();
+        }
+
+        function updateTopBackButton() {
+            const backBtn = document.getElementById('header-back-btn');
+            const cartActive = document.getElementById('cart').classList.contains('active');
+            const adminActive = document.getElementById('admin-panel').classList.contains('active');
+            const receiptActive = document.getElementById('receipt').classList.contains('active');
+            backBtn.style.display = cartActive || adminActive || receiptActive ? 'inline-block' : 'none';
+        }
+
+        function handleTopBack() {
+            if (document.getElementById('admin-panel').classList.contains('active')) {
+                closeAdmin();
+                return;
+            }
+            if (document.getElementById('receipt').classList.contains('active')) {
+                goBackFromReceipt();
+                return;
+            }
+            if (document.getElementById('cart').classList.contains('active')) {
+                goBackToMenu();
+            }
+        }
+
+        function setPayment(method, event = null) {
             currentMethod = method;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('pay-card').style.display = method === 'card' ? 'block' : 'none';
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            const activeTab = document.querySelector(`.tab[onclick="setPayment('${method}')"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
             document.getElementById('pay-upi').style.display = method === 'upi' ? 'block' : 'none';
+            const counterOption = document.getElementById('counter-print-option');
+            counterOption.style.display = method === 'cash' ? 'block' : 'none';
+            const payButton = document.getElementById('pay-order-button');
+            if (payButton) {
+                payButton.style.display = method === 'cash' ? 'none' : 'block';
+            }
         }
 
         function useTestCard() {
@@ -246,6 +460,7 @@
             document.getElementById('admin-panel').classList.remove('active');
             document.getElementById('header').style.display = 'flex';
             document.getElementById('menu').style.display = 'grid';
+            updateTopBackButton();
         }
 
         function saveSettings() {
@@ -257,38 +472,30 @@
             alert("Settings Saved Successfully! Currency updated.");
         }
 
+        function createOrderData() {
+            const orderId = Math.floor(Math.random() * 1000000);
+            const total = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+
+            return {
+                id: orderId,
+                items: cart.map(item => ({ ...item })),
+                total: total,
+                method: currentMethod,
+                status: 'active',
+                timestamp: new Date().toLocaleTimeString()
+            };
+        }
+
         async function processOrder() {
             if(cart.length === 0) return alert("Cart is empty!");
-            if(currentMethod === 'card' && (!document.getElementById('card-name').value || !document.getElementById('card-num').value)) {
-                return alert("Please fill card details or use Test Card.");
-            }
             if(currentMethod === 'upi' && !document.getElementById('upi-ref').value) {
                 return alert("Please enter UPI reference number.");
             }
 
-            const orderId = Math.floor(Math.random() * 1000000);
-            const total = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
-            
-            const orderData = { 
-                id: orderId, 
-                items: cart, 
-                total: total, 
-                method: currentMethod, 
-                status: 'active',
-                timestamp: new Date().toLocaleTimeString() 
-            };
+            const orderData = createOrderData();
+            saveOrderToDatabase(orderData);
+            currentOrderForPrint = orderData;
 
-            // Local Fallback for testing
-            mockOrders.push(orderData);
-
-            // Save to Firebase if configured
-            if(window.db && window.addDoc) {
-                try {
-                    await window.addDoc(window.collection(window.db, "orders"), orderData);
-                } catch(e) { console.error("Firebase save failed", e); }
-            }
-
-            // Show User Receipt
             document.getElementById('cart').classList.remove('active');
             document.getElementById('header').style.display = 'none';
             
@@ -300,9 +507,66 @@
                     <span>${item.name}</span><span>${currency}${item.price.toFixed(2)}</span>
                 </div>
             `).join('');
-            document.getElementById('receipt-total').innerText = total;
+            document.getElementById('receipt-total').innerText = orderData.total;
             document.getElementById('receipt-method').innerText = currentMethod.toUpperCase();
-            document.getElementById('receipt-id').innerText = orderId;
+            document.getElementById('receipt-id').innerText = orderData.id;
+
+            const printBtn = document.getElementById('receipt-print-button');
+            printBtn.style.display = 'none';
+        }
+
+        function handleCounterPrint() {
+            if (cart.length === 0) return alert('Cart is empty!');
+
+            const orderData = createOrderData();
+            saveOrderToDatabase(orderData);
+            currentOrderForPrint = orderData;
+            counterOrderSaved = true;
+
+            document.getElementById('cart').classList.remove('active');
+            document.getElementById('header').style.display = 'none';
+
+            const receiptDiv = document.getElementById('receipt');
+            receiptDiv.classList.add('active');
+
+            document.getElementById('receipt-items').innerHTML = cart.map(item => `
+                <div style="display:flex; justify-content:space-between;">
+                    <span>${item.name}</span><span>${currency}${item.price.toFixed(2)}</span>
+                </div>
+            `).join('');
+            document.getElementById('receipt-total').innerText = orderData.total;
+            document.getElementById('receipt-method').innerText = currentMethod.toUpperCase();
+            document.getElementById('receipt-id').innerText = orderData.id;
+
+            const printBtn = document.getElementById('receipt-print-button');
+            printBtn.style.display = 'block';
+            printCurrentReceipt();
+        }
+
+        function printCurrentReceipt() {
+            const receipt = document.getElementById('receipt');
+            if (!receipt || !currentOrderForPrint) return;
+
+            if (currentMethod === 'cash' && !counterOrderSaved) {
+                const orderData = createOrderData();
+                saveOrderToDatabase(orderData);
+                currentOrderForPrint = orderData;
+                counterOrderSaved = true;
+            }
+
+            const printBtn = document.getElementById('receipt-print-button');
+            if (printBtn) printBtn.style.display = 'none';
+            window.print();
+            setTimeout(() => {
+                if (printBtn) printBtn.style.display = currentMethod === 'cash' ? 'block' : 'none';
+            }, 800);
+        }
+
+        function goBackFromReceipt() {
+            document.getElementById('receipt').classList.remove('active');
+            document.getElementById('header').style.display = 'flex';
+            document.getElementById('menu').style.display = 'grid';
+            updateTopBackButton();
         }
 
         function renderAdminOrders() {
@@ -335,6 +599,7 @@
 
         function toggleOrderStatus(index) {
             mockOrders[index].status = mockOrders[index].status === 'completed' ? 'active' : 'completed';
+            saveOrders(mockOrders);
             renderAdminOrders();
         }
 
