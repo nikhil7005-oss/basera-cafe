@@ -265,16 +265,62 @@
             localStorage.setItem('auraCafeOrders', JSON.stringify(orders));
         }
 
-        function saveOrderToDatabase(order) {
-            mockOrders.push(order);
+        async function loadOrdersFromDatabase() {
+            if (!window.db || !window.getDocs) return mockOrders;
+
+            try {
+                const snapshot = await window.getDocs(window.collection(window.db, 'orders'));
+                const firestoreOrders = snapshot.docs.map((docSnap) => ({
+                    ...docSnap.data(),
+                    firestoreId: docSnap.id,
+                    id: docSnap.data().id || Number(docSnap.id)
+                }));
+
+                if (firestoreOrders.length > 0) {
+                    mockOrders = firestoreOrders;
+                    saveOrders(mockOrders);
+                    if (typeof renderAdminOrders === 'function') {
+                        renderAdminOrders();
+                    }
+                }
+
+                return mockOrders;
+            } catch (e) {
+                console.warn('Firestore load failed, using local order cache.', e);
+                return mockOrders;
+            }
+        }
+
+        async function saveOrderToDatabase(order) {
+            const localOrders = [...mockOrders, order];
+            mockOrders = localOrders;
             saveOrders(mockOrders);
 
-            if(window.db && window.addDoc) {
+            if (window.db && window.addDoc) {
                 try {
-                    window.addDoc(window.collection(window.db, "orders"), order);
+                    const docRef = await window.addDoc(window.collection(window.db, 'orders'), order);
+                    order.firestoreId = docRef.id;
+                    mockOrders = mockOrders.map((entry) => entry.id === order.id ? { ...entry, firestoreId: docRef.id } : entry);
+                    saveOrders(mockOrders);
+                    if (typeof renderAdminOrders === 'function') {
+                        renderAdminOrders();
+                    }
+                    return docRef.id;
                 } catch (e) {
-                    console.error('Firebase save failed', e);
+                    console.error('Firebase save failed. Using local storage fallback.', e);
                 }
+            }
+
+            return null;
+        }
+
+        async function updateOrderStatusInDatabase(order, nextStatus) {
+            if (!window.db || !window.updateDoc || !order.firestoreId) return;
+
+            try {
+                await window.updateDoc(window.doc(window.db, 'orders', order.firestoreId), { status: nextStatus });
+            } catch (e) {
+                console.warn('Firestore status update failed, local state preserved.', e);
             }
         }
 
@@ -551,7 +597,7 @@
             }
 
             const orderData = createOrderData();
-            saveOrderToDatabase(orderData);
+            await saveOrderToDatabase(orderData);
             currentOrderForPrint = orderData;
 
             document.getElementById('cart').classList.remove('active');
@@ -573,11 +619,11 @@
             printBtn.style.display = 'none';
         }
 
-        function handleCounterPrint() {
+        async function handleCounterPrint() {
             if (cart.length === 0) return alert('Cart is empty!');
 
             const orderData = createOrderData();
-            saveOrderToDatabase(orderData);
+            await saveOrderToDatabase(orderData);
             currentOrderForPrint = orderData;
             counterOrderSaved = true;
 
@@ -662,8 +708,11 @@
         }
 
         function toggleOrderStatus(index) {
-            mockOrders[index].status = mockOrders[index].status === 'completed' ? 'active' : 'completed';
+            const order = mockOrders[index];
+            const nextStatus = order.status === 'completed' ? 'active' : 'completed';
+            order.status = nextStatus;
             saveOrders(mockOrders);
+            updateOrderStatusInDatabase(order, nextStatus);
             renderAdminOrders();
         }
 
@@ -691,6 +740,7 @@
         }
 
         renderMenu();
+        loadOrdersFromDatabase();
     </script>
 </body>
 </html>
