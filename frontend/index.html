@@ -83,8 +83,9 @@
             #receipt {
                 display: block !important;
                 position: fixed !important;
-                left: 0 !important;
+                left: 50% !important;
                 top: 0 !important;
+                transform: translateX(-50%) !important;
                 width: 80mm !important;
                 max-width: 80mm !important;
                 margin: 0 !important;
@@ -94,7 +95,22 @@
                 background: #fff !important;
                 font-size: 12px !important;
                 line-height: 1.5 !important;
-                text-align: left !important;
+                text-align: center !important;
+            }
+
+            #receipt > div,
+            #receipt p,
+            #receipt h2,
+            #receipt h3,
+            #receipt #receipt-items,
+            #receipt-items > div {
+                text-align: center !important;
+            }
+
+            #receipt #receipt-items > div,
+            #receipt h3,
+            #receipt p {
+                width: 100% !important;
             }
 
             #receipt .no-print,
@@ -211,7 +227,10 @@
     <!-- User Receipt (No Print) -->
     <div id="receipt">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-            <h2 style="text-align:center; margin:0;">BASERAA</h2>
+            <div style="flex:1; text-align:center;">
+                <h2 style="text-align:center; margin:0;">BASERAA</h2>
+                <p style="text-align:center; margin:4px 0 0 0; font-size:11px;">A place to belong</p>
+            </div>
             <button class="btn no-print" style="background:#000; padding:8px 12px;" onclick="goBackFromReceipt()">Back</button>
         </div>
         <p style="text-align:center;">----------------------</p>
