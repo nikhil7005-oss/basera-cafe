@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basera Cafe</title>
+    <title>Baseraa</title>
     <script src="./config.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -129,7 +129,7 @@
 <body>
 
     <header id="header">
-        <h1>Basera Cafe ☕</h1>
+        <h1>Baseraa ☕</h1>
         <div>
             <button id="header-back-btn" class="btn" style="display:none; background:#000;" onclick="handleTopBack()">Back</button>
             <button class="btn" onclick="toggleCart()">Cart (<span id="cart-count">0</span>)</button>
@@ -186,6 +186,7 @@
         <h2>Your Tray 🛒</h2>
         <div id="cart-items" style="margin: 20px 0;"></div>
         <h3>Total: <span class="currency-symbol">$</span><span id="cart-total">0.00</span></h3><br>
+        <button class="btn" style="background:#d32f2f; width:100%; margin-bottom:15px;" onclick="clearCartAndHome()">Clear Cart</button>
         <button class="btn" style="background:#000; width:100%; margin-bottom:15px;" onclick="goBackToMenu()">Back</button>
         
         <h3>Payment Method</h3>
@@ -210,7 +211,7 @@
     <!-- User Receipt (No Print) -->
     <div id="receipt">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-            <h2 style="text-align:center; margin:0;">BASERA CAFE</h2>
+            <h2 style="text-align:center; margin:0;">BASERAA</h2>
             <button class="btn no-print" style="background:#000; padding:8px 12px;" onclick="goBackFromReceipt()">Back</button>
         </div>
         <p style="text-align:center;">----------------------</p>
@@ -225,7 +226,7 @@
 
     <!-- Admin Print Receipt Container -->
     <div id="admin-receipt" class="print-area">
-        <h2 style="text-align:center;">BASERA CAFE (MERCHANT COPY)</h2>
+        <h2 style="text-align:center;">BASERAA (MERCHANT COPY)</h2>
         <p style="text-align:center;">----------------------</p>
         <div id="admin-receipt-items"></div>
         <p style="text-align:center;">----------------------</p>
@@ -496,6 +497,12 @@
             document.getElementById('cart').classList.remove('active');
             document.getElementById('menu').style.display = 'grid';
             updateTopBackButton();
+        }
+
+        function clearCartAndHome() {
+            cart = [];
+            updateCart();
+            goBackToMenu();
         }
 
         function updateTopBackButton() {
