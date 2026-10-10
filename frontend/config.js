@@ -1,5 +1,5 @@
 window.__APP_CONFIG__ = {
-  apiBaseUrl: "http://127.0.0.1:8000",
+  apiBaseUrl: "https://baseraa-api.onrender.com",
   firebase: {
     apiKey: "AIzaSyCntGujar9lOdMWMlRc9Bso79vINDQOxPM",
     authDomain: "basera-cafe.firebaseapp.com",
