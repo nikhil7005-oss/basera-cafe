@@ -1,8 +1,14 @@
 import os
+from pathlib import Path
+
 import razorpay
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(BASE_DIR / ".env")
 
 app = FastAPI()
 
