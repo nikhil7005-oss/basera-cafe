@@ -57,13 +57,68 @@
         .modal-content { background: #fff; padding: 30px; border: var(--border); box-shadow: 10px 10px 0px #000; width: 90%; max-width: 400px; }
         .order-card { border: 2px dashed #000; padding: 15px; margin-bottom: 15px; background: #f9f9f9; }
         
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+
         @media print {
-            body * { visibility: hidden; }
-            .print-area, .print-area * { visibility: visible; }
-            .print-area { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; padding: 0; }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+            }
+
+            body * {
+                visibility: hidden !important;
+            }
+
+            #receipt, #receipt * {
+                visibility: visible !important;
+            }
+
+            #receipt {
+                display: block !important;
+                position: fixed !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
+                margin: 0 !important;
+                padding: 5mm !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: #fff !important;
+                font-size: 12px !important;
+                line-height: 1.5 !important;
+                text-align: left !important;
+            }
+
+            #receipt .no-print,
+            .no-print,
+            .btn,
+            #header,
+            #menu,
+            #cart,
+            #admin-panel,
+            #admin-login-modal {
+                display: none !important;
+                visibility: hidden !important;
+            }
+
             .no-print { display: none !important; }
         }
-        #receipt { display: none; background: #fff; padding: 20px; width: 300px; margin: 0 auto; border: 1px dashed #000; font-family: monospace; }
+
+        #receipt {
+            display: none;
+            background: #fff;
+            padding: 20px;
+            width: 300px;
+            margin: 0 auto;
+            border: 1px dashed #000;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
         #receipt.active { display: block; }
         #admin-receipt { display: none; background: #fff; padding: 20px; width: 300px; margin: 0 auto; border: 1px dashed #000; font-family: monospace; }
     </style>
@@ -540,7 +595,6 @@
 
             const printBtn = document.getElementById('receipt-print-button');
             printBtn.style.display = 'block';
-            printCurrentReceipt();
         }
 
         function printCurrentReceipt() {
@@ -556,7 +610,12 @@
 
             const printBtn = document.getElementById('receipt-print-button');
             if (printBtn) printBtn.style.display = 'none';
-            window.print();
+            try {
+                window.print();
+            } catch (e) {
+                console.error('Print failed:', e);
+                alert('Print could not be triggered in this browser. Please try again.');
+            }
             setTimeout(() => {
                 if (printBtn) printBtn.style.display = currentMethod === 'cash' ? 'block' : 'none';
             }, 800);
@@ -565,7 +624,9 @@
         function goBackFromReceipt() {
             document.getElementById('receipt').classList.remove('active');
             document.getElementById('header').style.display = 'flex';
-            document.getElementById('menu').style.display = 'grid';
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('cart').classList.add('active');
+            document.getElementById('cart').style.display = 'block';
             updateTopBackButton();
         }
 
