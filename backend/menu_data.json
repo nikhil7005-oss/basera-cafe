@@ -1,12 +1,12 @@
 {
   "menu": [
     {
-      "id": 999,
-      "name": "Persisted Shared Dish",
-      "price": 22.5,
-      "emoji": "\ud83c\udf0d",
+      "id": 778,
+      "name": "LIVE_SYNC_TEST_2026",
+      "price": 19.99,
+      "emoji": "test",
       "image": "",
-      "category": "Starters"
+      "category": "Sync Shared"
     }
   ],
   "categories": [
@@ -14,6 +14,7 @@
     "Main Course",
     "Beverages",
     "Desserts",
-    "Others"
+    "Others",
+    "Sync Shared"
   ]
 }
