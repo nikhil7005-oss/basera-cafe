@@ -184,6 +184,13 @@
         <div style="margin-top: 30px; background: #f7f7f7; border: var(--border); padding: 20px; box-shadow: var(--shadow);">
             <h2>Menu Editor 🍽️</h2>
             <div id="menu-editor" style="margin-top: 20px;"></div>
+            <div style="margin-top: 20px; padding: 15px; border: var(--border); background: #fff; box-shadow: var(--shadow);">
+                <label style="display:block; margin-bottom:8px; font-size:14px;">Add New Category</label>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+                    <input id="new-category-input" type="text" placeholder="Type category name" style="flex:1; min-width:180px; padding:10px; border: var(--border); font-family:inherit;" />
+                    <button class="btn" style="background:#ff9800; color:#000;" onclick="addCustomCategory()">Add Category +</button>
+                </div>
+            </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 20px;">
                 <button class="btn" onclick="addMenuItemEditor()">Add Dish +</button>
                 <button class="btn" style="background:#4CAF50;" onclick="saveMenuFromEditor()">Save Menu</button>
@@ -255,7 +262,25 @@
     </div>
 
     <script>
-        const CATEGORY_OPTIONS = ['Starters', 'Main Course', 'Beverages', 'Desserts', 'Others'];
+        const DEFAULT_CATEGORY_OPTIONS = ['Starters', 'Main Course', 'Beverages', 'Desserts', 'Others'];
+
+        function loadCategories() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('auraCafeCategories'));
+                if (Array.isArray(saved) && saved.length > 0) {
+                    return saved;
+                }
+            } catch (e) {
+                console.warn('No saved categories found. Using default categories.');
+            }
+            return [...DEFAULT_CATEGORY_OPTIONS];
+        }
+
+        function persistCategories(categories) {
+            localStorage.setItem('auraCafeCategories', JSON.stringify(categories));
+        }
+
+        let CATEGORY_OPTIONS = loadCategories();
 
         const DEFAULT_MENU = [
             { id: 1, name: 'Matcha Latte', price: 4.50, emoji: '🍵', image: '', category: 'Beverages' },
@@ -360,6 +385,16 @@
             localStorage.setItem('auraCafeMenu', JSON.stringify(menuItems));
         }
 
+        function getAllCategories() {
+            const menuCategories = menu.map(item => item.category).filter(Boolean);
+            const extraCategories = Object.keys(menuCategories.reduce((acc, category) => {
+                acc[category] = true;
+                return acc;
+            }, {}));
+            const allCategories = [...CATEGORY_OPTIONS, ...extraCategories];
+            return [...new Set(allCategories.filter(Boolean))];
+        }
+
         function renderMenu() {
             const grid = document.getElementById('menu');
             const grouped = {};
@@ -370,8 +405,9 @@
                 grouped[category].push(item);
             });
 
-            const orderedCategories = CATEGORY_OPTIONS.filter(category => grouped[category]);
-            const remainingCategories = Object.keys(grouped).filter(category => !CATEGORY_OPTIONS.includes(category));
+            const allCategories = getAllCategories();
+            const orderedCategories = allCategories.filter(category => grouped[category]);
+            const remainingCategories = Object.keys(grouped).filter(category => !allCategories.includes(category));
 
             grid.innerHTML = [...orderedCategories, ...remainingCategories].map((category) => {
                 const items = grouped[category];
@@ -405,6 +441,8 @@
             const editor = document.getElementById('menu-editor');
             if (!editor) return;
 
+            const allCategories = getAllCategories();
+
             editor.innerHTML = menu.map((item, index) => `
                 <div class="menu-editor-item" data-id="${item.id}" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items:end; border: var(--border); padding: 15px; background:#fff; margin-bottom: 15px; box-shadow: 3px 3px 0 #000;">
                     <div class="input-group" style="margin:0;">
@@ -414,7 +452,7 @@
                     <div class="input-group" style="margin:0;">
                         <label>Category</label>
                         <select data-field="category">
-                            ${CATEGORY_OPTIONS.map(category => `<option value="${category}" ${item.category === category ? 'selected' : ''}>${category}</option>`).join('')}
+                            ${allCategories.map(category => `<option value="${category}" ${item.category === category ? 'selected' : ''}>${category}</option>`).join('')}
                         </select>
                     </div>
                     <div class="input-group" style="margin:0;">
@@ -434,6 +472,27 @@
             `).join('');
         }
 
+        function addCustomCategory() {
+            const input = document.getElementById('new-category-input');
+            const categoryName = input ? input.value : prompt('Enter new category name:');
+            if (!categoryName) return;
+
+            const trimmed = String(categoryName).trim();
+            if (!trimmed) return;
+
+            const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+            if (!CATEGORY_OPTIONS.includes(formatted)) {
+                CATEGORY_OPTIONS.push(formatted);
+                persistCategories(CATEGORY_OPTIONS);
+            }
+
+            if (input) {
+                input.value = '';
+            }
+
+            renderMenu();
+        }
+
         function addMenuItemEditor() {
             menu.push({
                 id: Date.now(),
@@ -441,7 +500,7 @@
                 price: 0,
                 emoji: '🍽️',
                 image: '',
-                category: 'Others'
+                category: CATEGORY_OPTIONS[0] || 'Others'
             });
             renderMenuEditor();
         }
@@ -462,6 +521,11 @@
                 const price = Number(row.querySelector('[data-field="price"]').value || 0);
                 const emoji = row.querySelector('[data-field="emoji"]').value.trim() || '☕';
                 const image = row.querySelector('[data-field="image"]').value.trim();
+
+                if (!CATEGORY_OPTIONS.includes(category)) {
+                    CATEGORY_OPTIONS.push(category);
+                    persistCategories(CATEGORY_OPTIONS);
+                }
 
                 if (!name) return null;
 
