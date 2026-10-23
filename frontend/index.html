@@ -767,6 +767,27 @@
             alert("Settings Saved Successfully! Currency updated.");
         }
 
+        function groupReceiptItems(items) {
+            const groupedMap = new Map();
+
+            items.forEach((item) => {
+                const key = `${item.name}|${item.category || 'general'}`;
+                if (!groupedMap.has(key)) {
+                    groupedMap.set(key, {
+                        name: item.name,
+                        price: Number(item.price) || 0,
+                        qty: 1
+                    });
+                    return;
+                }
+
+                const existing = groupedMap.get(key);
+                existing.qty += 1;
+            });
+
+            return Array.from(groupedMap.values());
+        }
+
         function createOrderData() {
             const orderId = Math.floor(Math.random() * 1000000);
             const total = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
@@ -796,10 +817,11 @@
             
             const receiptDiv = document.getElementById('receipt');
             receiptDiv.classList.add('active');
-            
-            document.getElementById('receipt-items').innerHTML = cart.map(item => `
-                <div style="display:flex; justify-content:space-between;">
-                    <span>${item.name}</span><span>${currency}${item.price.toFixed(2)}</span>
+
+            const groupedItems = groupReceiptItems(cart);
+            document.getElementById('receipt-items').innerHTML = groupedItems.map(item => `
+                <div style="display:flex; justify-content:space-between; gap:10px;">
+                    <span>${item.name} x ${item.qty}</span><span>${currency}${(item.price * item.qty).toFixed(2)}</span>
                 </div>
             `).join('');
             document.getElementById('receipt-total').innerText = orderData.total;
@@ -824,9 +846,10 @@
             const receiptDiv = document.getElementById('receipt');
             receiptDiv.classList.add('active');
 
-            document.getElementById('receipt-items').innerHTML = cart.map(item => `
-                <div style="display:flex; justify-content:space-between;">
-                    <span>${item.name}</span><span>${currency}${item.price.toFixed(2)}</span>
+            const groupedItems = groupReceiptItems(cart);
+            document.getElementById('receipt-items').innerHTML = groupedItems.map(item => `
+                <div style="display:flex; justify-content:space-between; gap:10px;">
+                    <span>${item.name} x ${item.qty}</span><span>${currency}${(item.price * item.qty).toFixed(2)}</span>
                 </div>
             `).join('');
             document.getElementById('receipt-total').innerText = orderData.total;
@@ -912,9 +935,10 @@
             const adminReceipt = document.getElementById('admin-receipt');
             adminReceipt.style.display = 'block';
 
-            document.getElementById('admin-receipt-items').innerHTML = order.items.map(item => `
-                <div style="display:flex; justify-content:space-between;">
-                    <span>${item.name}</span><span>${currency}${item.price.toFixed(2)}</span>
+            const groupedItems = groupReceiptItems(order.items || []);
+            document.getElementById('admin-receipt-items').innerHTML = groupedItems.map(item => `
+                <div style="display:flex; justify-content:space-between; gap:10px;">
+                    <span>${item.name} x ${item.qty}</span><span>${currency}${(item.price * item.qty).toFixed(2)}</span>
                 </div>
             `).join('');
             document.getElementById('admin-receipt-total').innerText = order.total;
