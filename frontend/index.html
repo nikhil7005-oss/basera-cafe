@@ -191,6 +191,13 @@
                     <button class="btn" style="background:#ff9800; color:#000;" onclick="addCustomCategory()">Add Category +</button>
                 </div>
             </div>
+            <div style="margin-top: 20px; padding: 15px; border: var(--border); background: #fff; box-shadow: var(--shadow);">
+                <label style="display:block; margin-bottom:8px; font-size:14px;">Remove Category</label>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+                    <select id="remove-category-select" style="flex:1; min-width:180px; padding:10px; border: var(--border); font-family:inherit; background:#fff;"></select>
+                    <button class="btn" style="background:#d32f2f; color:#fff;" onclick="removeSelectedCategory()">Remove Category</button>
+                </div>
+            </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 20px;">
                 <button class="btn" onclick="addMenuItemEditor()">Add Dish +</button>
                 <button class="btn" style="background:#4CAF50;" onclick="saveMenuFromEditor()">Save Menu</button>
@@ -264,6 +271,48 @@
     <script>
         const DEFAULT_CATEGORY_OPTIONS = ['Starters', 'Main Course', 'Beverages', 'Desserts', 'Others'];
 
+        function getApiBaseUrl() {
+            return (window.__APP_CONFIG__ && window.__APP_CONFIG__.apiBaseUrl) || '';
+        }
+
+        async function fetchMenuFromServer() {
+            const apiBaseUrl = getApiBaseUrl();
+            if (!apiBaseUrl) return null;
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/menu`);
+                if (!response.ok) {
+                    throw new Error('Menu fetch failed');
+                }
+                return await response.json();
+            } catch (e) {
+                console.warn('Server menu unavailable, using local data.', e);
+                return null;
+            }
+        }
+
+        async function persistMenuToServer(menuItems, categories) {
+            const apiBaseUrl = getApiBaseUrl();
+            const payload = { menu: menuItems, categories };
+
+            if (apiBaseUrl) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/menu`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                } catch (e) {
+                    console.warn('Server sync failed, keeping local fallback.', e);
+                }
+            }
+
+            return null;
+        }
+
         function loadCategories() {
             try {
                 const saved = JSON.parse(localStorage.getItem('auraCafeCategories'));
@@ -296,6 +345,17 @@
         let mockOrders = loadOrders();
         let currentOrderForPrint = null;
         let counterOrderSaved = false;
+
+        async function hydrateSharedMenu() {
+            const serverState = await fetchMenuFromServer();
+            if (serverState && Array.isArray(serverState.menu) && serverState.menu.length) {
+                menu = serverState.menu;
+                persistMenu(menu);
+                CATEGORY_OPTIONS = Array.isArray(serverState.categories) && serverState.categories.length ? serverState.categories : loadCategories();
+                persistCategories(CATEGORY_OPTIONS);
+            }
+            renderMenu();
+        }
 
         function loadOrders() {
             try {
@@ -395,6 +455,14 @@
             return [...new Set(allCategories.filter(Boolean))];
         }
 
+        function renderCategoryControls() {
+            const removeSelect = document.getElementById('remove-category-select');
+            if (!removeSelect) return;
+
+            const options = CATEGORY_OPTIONS.map((category) => `<option value="${category}">${category}</option>`).join('');
+            removeSelect.innerHTML = `<option value="">Select category</option>${options}`;
+        }
+
         function renderMenu() {
             const grid = document.getElementById('menu');
             const grouped = {};
@@ -434,6 +502,7 @@
                 `;
             }).join('');
             document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = currency);
+            renderCategoryControls();
             renderMenuEditor();
         }
 
@@ -472,7 +541,7 @@
             `).join('');
         }
 
-        function addCustomCategory() {
+        async function addCustomCategory() {
             const input = document.getElementById('new-category-input');
             const categoryName = input ? input.value : prompt('Enter new category name:');
             if (!categoryName) return;
@@ -484,6 +553,7 @@
             if (!CATEGORY_OPTIONS.includes(formatted)) {
                 CATEGORY_OPTIONS.push(formatted);
                 persistCategories(CATEGORY_OPTIONS);
+                await persistMenuToServer(menu, CATEGORY_OPTIONS);
             }
 
             if (input) {
@@ -491,6 +561,35 @@
             }
 
             renderMenu();
+        }
+
+        async function removeSelectedCategory() {
+            const select = document.getElementById('remove-category-select');
+            if (!select || !select.value) {
+                alert('Please select a category to remove.');
+                return;
+            }
+
+            const categoryToRemove = select.value;
+            const confirmed = confirm(`Remove "${categoryToRemove}"? Items in this category will be moved to "Others".`);
+            if (!confirmed) return;
+
+            if (CATEGORY_OPTIONS.length <= 1) {
+                alert('At least one category must remain.');
+                return;
+            }
+
+            CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((category) => category !== categoryToRemove);
+            persistCategories(CATEGORY_OPTIONS);
+
+            menu = menu.map((item) => (
+                item.category === categoryToRemove ? { ...item, category: 'Others' } : item
+            ));
+            persistMenu(menu);
+            await persistMenuToServer(menu, CATEGORY_OPTIONS);
+
+            renderMenu();
+            alert('Category removed successfully.');
         }
 
         function addMenuItemEditor() {
@@ -514,7 +613,7 @@
             renderMenu();
         }
 
-        function saveMenuFromEditor() {
+        async function saveMenuFromEditor() {
             const updatedMenu = [...document.querySelectorAll('.menu-editor-item')].map((row) => {
                 const name = row.querySelector('[data-field="name"]').value.trim();
                 const category = row.querySelector('[data-field="category"]').value || 'Other';
@@ -546,6 +645,8 @@
 
             menu = updatedMenu;
             persistMenu(menu);
+            persistCategories(CATEGORY_OPTIONS);
+            await persistMenuToServer(menu, CATEGORY_OPTIONS);
             renderMenu();
             updateCart();
             alert('Menu updated successfully!');
@@ -829,7 +930,7 @@
             }, 1000);
         }
 
-        renderMenu();
+        hydrateSharedMenu();
         loadOrdersFromDatabase();
     </script>
 </body>

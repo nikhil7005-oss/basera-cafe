@@ -1,0 +1,19 @@
+{
+  "menu": [
+    {
+      "id": 999,
+      "name": "Persisted Shared Dish",
+      "price": 22.5,
+      "emoji": "\ud83c\udf0d",
+      "image": "",
+      "category": "Starters"
+    }
+  ],
+  "categories": [
+    "Starters",
+    "Main Course",
+    "Beverages",
+    "Desserts",
+    "Others"
+  ]
+}
