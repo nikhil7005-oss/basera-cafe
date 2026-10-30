@@ -11,7 +11,15 @@ from pydantic import BaseModel
 BASE_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(BASE_DIR / ".env")
 
-MENU_DATA_FILE = BASE_DIR / "backend" / "menu_data.json"
+
+def get_menu_data_path() -> Path:
+    configured_path = os.getenv("MENU_DATA_PATH")
+    if configured_path:
+        return Path(configured_path).expanduser().resolve()
+    return BASE_DIR / "backend" / "menu_data.json"
+
+
+MENU_DATA_FILE = get_menu_data_path()
 DEFAULT_MENU = [
     {"id": 1, "name": "Matcha Latte", "price": 4.50, "emoji": "🍵", "image": "", "category": "Beverages"},
     {"id": 2, "name": "Cold Brew", "price": 3.00, "emoji": "🧊", "image": "", "category": "Beverages"},
@@ -44,23 +52,29 @@ def ensure_menu_store() -> dict:
 def get_allowed_origins() -> list[str]:
     raw = os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:8080,http://127.0.0.1:8080"
+        "http://localhost:8080,http://127.0.0.1:8080,https://baseraa-cafe.netlify.app"
     )
-    return [
+    origins = [
         value.strip()
         for value in raw.split(",")
         if value.strip() and "*" not in value.strip()
     ]
+    if "https://baseraa-cafe.netlify.app" not in origins:
+        origins.append("https://baseraa-cafe.netlify.app")
+    return origins
 
 
 def get_allowed_origin_regex() -> str | None:
     raw = os.getenv("ALLOWED_ORIGINS", "")
+    patterns = []
     for value in raw.split(","):
         clean = value.strip()
         if "*" in clean:
             pattern = clean.replace(".", "\\.").replace("*", ".*")
-            return rf"^{pattern}$"
-    return None
+            patterns.append(rf"^{pattern}$")
+    if not patterns:
+        return r"^https://.*\\.netlify\\.app$"
+    return "|".join(patterns)
 
 
 app.add_middleware(

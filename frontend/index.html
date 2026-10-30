@@ -7,7 +7,7 @@
     <script src="./config.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const appConfig = window.__APP_CONFIG__ || {};
         const firebaseConfig = appConfig.firebase || {
@@ -29,6 +29,7 @@
             window.addDoc = addDoc;
             window.getDocs = getDocs;
             window.doc = doc;
+            window.getDoc = getDoc;
             window.setDoc = setDoc;
             window.updateDoc = updateDoc;
             window.onSnapshot = onSnapshot;
@@ -275,7 +276,50 @@
             return (window.__APP_CONFIG__ && window.__APP_CONFIG__.apiBaseUrl) || '';
         }
 
+        async function fetchMenuFromFirestore() {
+            if (!window.db || !window.getDoc || !window.doc) return null;
+
+            try {
+                const menuRef = window.doc(window.db, 'settings', 'menu');
+                const snapshot = await window.getDoc(menuRef);
+                if (snapshot.exists()) {
+                    const data = snapshot.data();
+                    if (data && Array.isArray(data.menu)) {
+                        return {
+                            menu: data.menu,
+                            categories: Array.isArray(data.categories) ? data.categories : DEFAULT_CATEGORY_OPTIONS
+                        };
+                    }
+                }
+            } catch (e) {
+                console.warn('Firestore menu unavailable.', e);
+            }
+            return null;
+        }
+
+        async function persistMenuToFirestore(menuItems, categories) {
+            if (!window.db || !window.setDoc || !window.doc) return false;
+
+            try {
+                const menuRef = window.doc(window.db, 'settings', 'menu');
+                await window.setDoc(menuRef, {
+                    menu: menuItems,
+                    categories,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                return true;
+            } catch (e) {
+                console.warn('Firestore save failed.', e);
+                return false;
+            }
+        }
+
         async function fetchMenuFromServer() {
+            const firestoreState = await fetchMenuFromFirestore();
+            if (firestoreState) {
+                return firestoreState;
+            }
+
             const apiBaseUrl = getApiBaseUrl();
             if (!apiBaseUrl) return null;
 
@@ -294,6 +338,7 @@
         async function persistMenuToServer(menuItems, categories) {
             const apiBaseUrl = getApiBaseUrl();
             const payload = { menu: menuItems, categories };
+            const firestoreSaved = await persistMenuToFirestore(menuItems, categories);
 
             if (apiBaseUrl) {
                 try {
@@ -310,7 +355,7 @@
                 }
             }
 
-            return null;
+            return firestoreSaved ? payload : null;
         }
 
         function loadCategories() {
@@ -347,13 +392,24 @@
         let counterOrderSaved = false;
 
         async function hydrateSharedMenu() {
+            const cachedMenu = loadMenu();
+            const cachedCategories = loadCategories();
             const serverState = await fetchMenuFromServer();
+
             if (serverState && Array.isArray(serverState.menu) && serverState.menu.length) {
                 menu = serverState.menu;
+                CATEGORY_OPTIONS = Array.isArray(serverState.categories) && serverState.categories.length ? serverState.categories : cachedCategories;
                 persistMenu(menu);
-                CATEGORY_OPTIONS = Array.isArray(serverState.categories) && serverState.categories.length ? serverState.categories : loadCategories();
                 persistCategories(CATEGORY_OPTIONS);
+                renderMenu();
+                return;
             }
+
+            if (Array.isArray(cachedMenu) && cachedMenu.length) {
+                menu = cachedMenu;
+                CATEGORY_OPTIONS = cachedCategories.length ? cachedCategories : DEFAULT_CATEGORY_OPTIONS;
+            }
+
             renderMenu();
         }
 
