@@ -374,6 +374,33 @@
             localStorage.setItem('auraCafeCategories', JSON.stringify(categories));
         }
 
+        function isStaleTestSeedState(state) {
+            if (!state || !Array.isArray(state.menu) || !state.menu.length) {
+                return false;
+            }
+
+            const names = state.menu.map(item => String(item && item.name || '').toLowerCase());
+            const categories = Array.isArray(state.categories) ? state.categories.map(item => String(item || '').toLowerCase()) : [];
+            const hasLegacySeedName = names.includes('live_sync_test_2026') || names.includes('sync shared');
+            const hasLegacySeedCategory = categories.some(category => category.includes('sync shared'));
+            const isSingleTestSeed = state.menu.length === 1 && hasLegacySeedName && hasLegacySeedCategory;
+            return hasLegacySeedName || isSingleTestSeed || hasLegacySeedCategory;
+        }
+
+        function isDefaultTemplateMenuState(state) {
+            if (!state || !Array.isArray(state.menu) || state.menu.length < 4) {
+                return false;
+            }
+
+            const expectedNames = ['matcha latte', 'cold brew', 'avocado toast', 'acai bowl'];
+            const actualNames = state.menu.map(item => String(item && item.name || '').toLowerCase());
+            const hasTemplateNames = expectedNames.every(name => actualNames.includes(name));
+            const categories = Array.isArray(state.categories) ? state.categories.map(item => String(item || '').toLowerCase()) : [];
+            const expectedCategories = ['starters', 'main course', 'beverages', 'desserts', 'others'];
+            const hasTemplateCategories = expectedCategories.every(category => categories.includes(category));
+            return hasTemplateNames && hasTemplateCategories;
+        }
+
         let CATEGORY_OPTIONS = loadCategories();
 
         const DEFAULT_MENU = [
@@ -396,6 +423,20 @@
             const cachedCategories = loadCategories();
             const serverState = await fetchMenuFromServer();
 
+            const hasLocalSavedMenu = Array.isArray(cachedMenu) && cachedMenu.length > 0;
+            const serverIsSeedOrTemplate = serverState && Array.isArray(serverState.menu) && serverState.menu.length
+                && (isStaleTestSeedState(serverState) || isDefaultTemplateMenuState(serverState));
+
+            if (serverIsSeedOrTemplate && hasLocalSavedMenu) {
+                menu = cachedMenu;
+                CATEGORY_OPTIONS = Array.isArray(cachedCategories) && cachedCategories.length ? cachedCategories : DEFAULT_CATEGORY_OPTIONS;
+                persistMenu(menu);
+                persistCategories(CATEGORY_OPTIONS);
+                await persistMenuToServer(menu, CATEGORY_OPTIONS);
+                renderMenu();
+                return;
+            }
+
             if (serverState && Array.isArray(serverState.menu) && serverState.menu.length) {
                 menu = serverState.menu;
                 CATEGORY_OPTIONS = Array.isArray(serverState.categories) && serverState.categories.length ? serverState.categories : cachedCategories;
@@ -405,7 +446,7 @@
                 return;
             }
 
-            if (Array.isArray(cachedMenu) && cachedMenu.length) {
+            if (hasLocalSavedMenu) {
                 menu = cachedMenu;
                 CATEGORY_OPTIONS = cachedCategories.length ? cachedCategories : DEFAULT_CATEGORY_OPTIONS;
             }

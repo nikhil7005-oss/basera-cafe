@@ -48,6 +48,20 @@ def test_menu_store_uses_explicit_storage_path(monkeypatch, tmp_path):
     importlib.reload(main)
 
 
+def test_seeded_default_menu_is_rejected():
+    payload = {
+        "menu": [
+            {"id": 1, "name": "Matcha Latte", "price": 4.5, "emoji": "🍵", "image": "", "category": "Beverages"},
+            {"id": 2, "name": "Cold Brew", "price": 3.0, "emoji": "🧊", "image": "", "category": "Beverages"},
+            {"id": 3, "name": "Avocado Toast", "price": 8.0, "emoji": "🥑", "image": "", "category": "Starters"},
+            {"id": 4, "name": "Acai Bowl", "price": 9.5, "emoji": "🥣", "image": "", "category": "Desserts"}
+        ],
+        "categories": ["Starters", "Main Course", "Beverages", "Desserts", "Others"]
+    }
+
+    assert main.is_stale_test_seed(payload) is True
+
+
 def test_allowed_origins_include_netlify_domain(monkeypatch):
     monkeypatch.setenv("ALLOWED_ORIGINS", "https://baseraa-cafe.netlify.app,http://localhost:8080")
     importlib.reload(main)

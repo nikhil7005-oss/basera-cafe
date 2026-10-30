@@ -1,12 +1,12 @@
 {
   "menu": [
     {
-      "id": 778,
-      "name": "LIVE_SYNC_TEST_2026",
-      "price": 19.99,
-      "emoji": "test",
+      "id": 1,
+      "name": "Shared Test Dish",
+      "price": 25.5,
+      "emoji": "\ud83e\uddea",
       "image": "",
-      "category": "Sync Shared"
+      "category": "Starters"
     }
   ],
   "categories": [
@@ -14,7 +14,6 @@
     "Main Course",
     "Beverages",
     "Desserts",
-    "Others",
-    "Sync Shared"
+    "Others"
   ]
 }
