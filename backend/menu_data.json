@@ -1,12 +1,20 @@
 {
   "menu": [
     {
-      "id": 1,
-      "name": "Shared Test Dish",
-      "price": 25.5,
-      "emoji": "\ud83e\uddea",
+      "id": 123,
+      "name": "Pipeline Verify Dish",
+      "price": 15.75,
+      "emoji": "\u2705",
       "image": "",
-      "category": "Starters"
+      "category": "Main Course"
+    },
+    {
+      "id": 124,
+      "name": "Pipeline Verify Drink",
+      "price": 9.5,
+      "emoji": "\ud83e\udd64",
+      "image": "",
+      "category": "Beverages"
     }
   ],
   "categories": [
